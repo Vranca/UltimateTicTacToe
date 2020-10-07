@@ -1,0 +1,9 @@
+c:\users\user\documents\visual studio 2015\Projects\UltimateTicTacToe\UltimateTicTacToe\bin\Debug\UltimateTicTacToe.exe.config
+c:\users\user\documents\visual studio 2015\Projects\UltimateTicTacToe\UltimateTicTacToe\bin\Debug\UltimateTicTacToe.exe
+c:\users\user\documents\visual studio 2015\Projects\UltimateTicTacToe\UltimateTicTacToe\bin\Debug\UltimateTicTacToe.pdb
+c:\users\user\documents\visual studio 2015\Projects\UltimateTicTacToe\UltimateTicTacToe\obj\Debug\UltimateTicTacToe.csprojResolveAssemblyReference.cache
+c:\users\user\documents\visual studio 2015\Projects\UltimateTicTacToe\UltimateTicTacToe\obj\Debug\UltimateTicTacToe.Form1.resources
+c:\users\user\documents\visual studio 2015\Projects\UltimateTicTacToe\UltimateTicTacToe\obj\Debug\UltimateTicTacToe.Properties.Resources.resources
+c:\users\user\documents\visual studio 2015\Projects\UltimateTicTacToe\UltimateTicTacToe\obj\Debug\UltimateTicTacToe.csproj.GenerateResource.Cache
+c:\users\user\documents\visual studio 2015\Projects\UltimateTicTacToe\UltimateTicTacToe\obj\Debug\UltimateTicTacToe.exe
+c:\users\user\documents\visual studio 2015\Projects\UltimateTicTacToe\UltimateTicTacToe\obj\Debug\UltimateTicTacToe.pdb
