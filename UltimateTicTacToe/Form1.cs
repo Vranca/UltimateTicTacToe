@@ -9,40 +9,85 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using UltimateTicTacToe.View;
 using UltimateTicTacToe.Game;
+using System.Threading;
 
 namespace UltimateTicTacToe
 {
     public partial class Form1 : Form
     {
         Game.Game game = null;
+        Form2 form2;
+        int humanPlayer;
 
-        public Form1()
+        Thread gameThread;
+        public Color cellBackground { get; set; }
+        public Form1(string name, int player,int depth, Image avatar, Form2 form)
         {
             InitializeComponent();
+            DoubleBuffered = true;
+            roundPictureBox2.Image = avatar;
+            form2 = form;
 
-            game = new Game.Game();
+           
+            game = new Game.Game(player,depth);
             SetModels();
             SetSubscribers();
-        }
+          
+            humanPlayer = player;
 
-        private void CellClicked(object sender, EventArgs e)
-        {
-            CellView clickedCell = (CellView)sender;
-            if (!clickedCell.model.resolved && game.MovePossible(clickedCell.model))
+            DrawPlayerSigns(humanPlayer);
+
+            if(!game.IsPlayerTurn())
             {
-                resetBackColor();
-                game.PlayMove(clickedCell.model);
-
+                int moveIndeks = game.minmax.GetTurn();
+                game.PlayMove(game.currPossibleMoves[moveIndeks]);
                 CheckWin();
 
-                if (game.activePlayer == -1)
+            }
+            labelName.Text = name;
+
+            gameThread = new Thread(() =>
+            {
+                game.minmax.GetTurn();
+                CheckWin();
+            });
+            if (form2.NightMode)
+            {
+                DarkMode();
+
+            }
+            else
+            {
+                LightMode();
+            }
+        }
+
+        private async void CellClicked(object sender, EventArgs e)
+        {
+            CellView clickedCell = (CellView)sender;
+            if (!clickedCell.model.resolved && game.MovePossible(clickedCell.model) && game.IsPlayerTurn())
+            {
+                resetBackColor(cellBackground);
+                game.PlayMove(clickedCell.model);
+                roundPictureBox4.Show();
+                roundPictureBox1.Hide();
+
+                resetBackColor(cellBackground);
+                CheckWin();
+
+                if (!game.IsPlayerTurn())
                 {
-                    resetBackColor();
-                    Refresh();
-                    game.minmax.PlayTurn();
+                    UseWaitCursor = true;
+                    label1.Show();
+                    int moveIndeks = await Task.Run(() => game.minmax.GetTurn());
+                    game.PlayMove(game.currPossibleMoves[moveIndeks]);
+                    label1.Hide();
+                    UseWaitCursor = false;  
+                    roundPictureBox4.Hide();
+                    roundPictureBox1.Show();
 
                     CheckWin();
-                }
+                }  
             }
         }
 
@@ -50,17 +95,111 @@ namespace UltimateTicTacToe
         {
             if (game.gameBoard.resolved)
             {
-                if (game.gameBoard.cellValue == 1)
-                    MessageBox.Show("X Won!!!");
-                else
-                    MessageBox.Show("O Won!!!");
+                if (game.gameBoard.cellValue == game.humanPlayer)
+                {
+                    MessageBox.Show("You won!!!");
+                    game.playerWinCount++;
+                    labelScorePlayer.Text = game.playerWinCount.ToString();
+                    resetBackColor(cellBackground);
 
-                Close();
+                    game.Reset();
+                    
+                    game.activePlayer = 1;
+                    game.humanPlayer = -game.humanPlayer;
+                    DrawPlayerSigns(game.humanPlayer);
+                    if (!game.IsPlayerTurn())
+                    {
+                        int moveIndeks = game.minmax.GetTurn();
+                        game.PlayMove(game.currPossibleMoves[moveIndeks]);
+                        CheckWin();
+                    }
+                }
+
+                else
+                {
+                    MessageBox.Show("Computer won!!!");
+                    game.computerWinCount++;
+                    labelScoreComputer.Text = game.computerWinCount.ToString();
+                    resetBackColor(cellBackground);
+
+                    game.Reset();
+                  
+                    game.activePlayer = 1;
+                    game.humanPlayer = -game.humanPlayer;
+                    DrawPlayerSigns(game.humanPlayer);
+                   
+                }
+
+                if (!game.IsPlayerTurn())
+                {
+                    int moveIndeks = game.minmax.GetTurn();
+                    game.PlayMove(game.currPossibleMoves[moveIndeks]);
+                    CheckWin();
+                }
             }
             else if (game.currPossibleMoves.Count == 0)
             {
                 MessageBox.Show("Draw!!!");
-                Close();
+
+                game.Reset();
+                
+                game.activePlayer = 1;
+                game.humanPlayer = -game.humanPlayer;
+                DrawPlayerSigns(game.humanPlayer);
+                if (!game.IsPlayerTurn())
+                {
+                    int moveIndeks = game.minmax.GetTurn();
+                    game.PlayMove(game.currPossibleMoves[moveIndeks]);
+                    CheckWin();
+                }
+            }
+            ColorResolved();
+        }
+        private void DrawPlayerSigns(int humanPlayer)
+        {
+            if (humanPlayer == 1)
+            {
+
+                cellView82.DrawCross();
+                cellView83.DrawCircle();
+                roundPictureBox1.BackColor = Color.FromArgb(29, 131, 212);
+                roundPictureBox4.BackColor = Color.FromArgb(212, 60, 50);
+                roundPictureBox4.Hide();
+                roundPictureBox1.Show();
+            }
+            else
+            {
+
+                cellView82.DrawCircle();
+                cellView83.DrawCross();
+                roundPictureBox4.BackColor = Color.FromArgb(29, 131, 212);
+                roundPictureBox1.BackColor = Color.FromArgb(212, 60, 50);
+                roundPictureBox4.Show();
+                roundPictureBox1.Hide();
+            }
+
+        }
+
+        private void ColorResolved()
+        {
+            
+            for(int i=0;i<9;i++)
+            {
+                if(game.gameBoard.childCells[i].resolved)
+                {
+                    if (game.gameBoard.childCells[i].cellValue == 1)
+                        for (int j=0;j<9;j++)
+                         {
+                            game.gameBoard.childCells[i].childCells[j].SetSubBackground(Color.PaleTurquoise);
+                         }
+                    else
+                    {
+                        for (int j = 0; j < 9; j++)
+                        {
+                            game.gameBoard.childCells[i].childCells[j].SetSubBackground(Color.DarkSalmon);
+                        }
+                    }
+                }
             }
         }
 
@@ -234,89 +373,206 @@ namespace UltimateTicTacToe
             game.gameBoard.childCells[8].childCells[8].AddSubscriber(cellView81);
         }
 
-        private void resetBackColor()
+        private void resetBackColor(Color color)
         {
-            cellView1.BackColor = Color.White;
-            cellView2.BackColor = Color.White;
-            cellView3.BackColor = Color.White;
-            cellView4.BackColor = Color.White;
-            cellView5.BackColor = Color.White;
-            cellView6.BackColor = Color.White;
-            cellView7.BackColor = Color.White;
-            cellView8.BackColor = Color.White;
-            cellView9.BackColor = Color.White;
-            cellView10.BackColor = Color.White;
-            cellView11.BackColor = Color.White;
-            cellView12.BackColor = Color.White;
-            cellView13.BackColor = Color.White;
-            cellView14.BackColor = Color.White;
-            cellView15.BackColor = Color.White;
-            cellView16.BackColor = Color.White;
-            cellView17.BackColor = Color.White;
-            cellView18.BackColor = Color.White;
-            cellView19.BackColor = Color.White;
-            cellView20.BackColor = Color.White;
-            cellView21.BackColor = Color.White;
-            cellView22.BackColor = Color.White;
-            cellView23.BackColor = Color.White;
-            cellView24.BackColor = Color.White;
-            cellView25.BackColor = Color.White;
-            cellView26.BackColor = Color.White;
-            cellView27.BackColor = Color.White;
-            cellView28.BackColor = Color.White;
-            cellView29.BackColor = Color.White;
-            cellView30.BackColor = Color.White;
-            cellView31.BackColor = Color.White;
-            cellView32.BackColor = Color.White;
-            cellView33.BackColor = Color.White;
-            cellView34.BackColor = Color.White;
-            cellView35.BackColor = Color.White;
-            cellView36.BackColor = Color.White;
-            cellView37.BackColor = Color.White;
-            cellView38.BackColor = Color.White;
-            cellView39.BackColor = Color.White;
-            cellView40.BackColor = Color.White;
-            cellView41.BackColor = Color.White;
-            cellView42.BackColor = Color.White;
-            cellView43.BackColor = Color.White;
-            cellView44.BackColor = Color.White;
-            cellView45.BackColor = Color.White;
-            cellView46.BackColor = Color.White;
-            cellView47.BackColor = Color.White;
-            cellView48.BackColor = Color.White;
-            cellView49.BackColor = Color.White;
-            cellView50.BackColor = Color.White;
-            cellView51.BackColor = Color.White;
-            cellView52.BackColor = Color.White;
-            cellView53.BackColor = Color.White;
-            cellView54.BackColor = Color.White;
-            cellView55.BackColor = Color.White;
-            cellView56.BackColor = Color.White;
-            cellView57.BackColor = Color.White;
-            cellView58.BackColor = Color.White;
-            cellView59.BackColor = Color.White;
-            cellView60.BackColor = Color.White;
-            cellView61.BackColor = Color.White;
-            cellView62.BackColor = Color.White;
-            cellView63.BackColor = Color.White;
-            cellView64.BackColor = Color.White;
-            cellView65.BackColor = Color.White;
-            cellView66.BackColor = Color.White;
-            cellView67.BackColor = Color.White;
-            cellView68.BackColor = Color.White;
-            cellView69.BackColor = Color.White;
-            cellView70.BackColor = Color.White;
-            cellView71.BackColor = Color.White;
-            cellView72.BackColor = Color.White;
-            cellView73.BackColor = Color.White;
-            cellView74.BackColor = Color.White;
-            cellView75.BackColor = Color.White;
-            cellView76.BackColor = Color.White;
-            cellView77.BackColor = Color.White;
-            cellView78.BackColor = Color.White;
-            cellView79.BackColor = Color.White;
-            cellView80.BackColor = Color.White;
-            cellView81.BackColor = Color.White;
+            cellView1.BackColor  = color;
+            cellView2.BackColor  = color;
+            cellView3.BackColor  = color;
+            cellView4.BackColor  = color;
+            cellView5.BackColor  = color;
+            cellView6.BackColor  = color;
+            cellView7.BackColor  = color;
+            cellView8.BackColor  = color;
+            cellView9.BackColor  = color;
+            cellView10.BackColor = color;
+            cellView11.BackColor = color;
+            cellView12.BackColor = color;
+            cellView13.BackColor = color;
+            cellView14.BackColor = color;
+            cellView15.BackColor = color;
+            cellView16.BackColor = color;
+            cellView17.BackColor = color;
+            cellView18.BackColor = color;
+            cellView19.BackColor = color;
+            cellView20.BackColor = color;
+            cellView21.BackColor = color;
+            cellView22.BackColor = color;
+            cellView23.BackColor = color;
+            cellView24.BackColor = color;
+            cellView25.BackColor = color;
+            cellView26.BackColor = color;
+            cellView27.BackColor = color;
+            cellView28.BackColor = color;
+            cellView29.BackColor = color;
+            cellView30.BackColor = color;
+            cellView31.BackColor = color;
+            cellView32.BackColor = color;
+            cellView33.BackColor = color;
+            cellView34.BackColor = color;
+            cellView35.BackColor = color;
+            cellView36.BackColor = color;
+            cellView37.BackColor = color;
+            cellView38.BackColor = color;
+            cellView39.BackColor = color;
+            cellView40.BackColor = color;
+            cellView41.BackColor = color;
+            cellView42.BackColor = color;
+            cellView43.BackColor = color;
+            cellView44.BackColor = color;
+            cellView45.BackColor = color;
+            cellView46.BackColor = color;
+            cellView47.BackColor = color;
+            cellView48.BackColor = color;
+            cellView49.BackColor = color;
+            cellView50.BackColor = color;
+            cellView51.BackColor = color;
+            cellView52.BackColor = color;
+            cellView53.BackColor = color;
+            cellView54.BackColor = color;
+            cellView55.BackColor = color;
+            cellView56.BackColor = color;
+            cellView57.BackColor = color;
+            cellView58.BackColor = color;
+            cellView59.BackColor = color;
+            cellView60.BackColor = color;
+            cellView61.BackColor = color;
+            cellView62.BackColor = color;
+            cellView63.BackColor = color;
+            cellView64.BackColor = color;
+            cellView65.BackColor = color;
+            cellView66.BackColor = color;
+            cellView67.BackColor = color;
+            cellView68.BackColor = color;
+            cellView69.BackColor = color;
+            cellView70.BackColor = color;
+            cellView71.BackColor = color;
+            cellView72.BackColor = color;
+            cellView73.BackColor = color;
+            cellView74.BackColor = color;
+            cellView75.BackColor = color;
+            cellView76.BackColor = color;
+            cellView77.BackColor = color;
+            cellView78.BackColor = color;
+            cellView79.BackColor = color;
+            cellView80.BackColor = color;
+            cellView81.BackColor = color;
+        }
+
+        private void pictureBox7_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
+
+        ToolTip tool = new ToolTip();
+        private void pictureBox1_MouseHover(object sender, EventArgs e)
+        {
+            tool.Show("Authors", (PictureBox)sender, 3000);
+        }
+
+        private void pictureBox8_MouseHover(object sender, EventArgs e)
+        {
+            tool.Show("How to play", (PictureBox)sender, 3000);
+        }
+
+        private void pictureBox7_MouseHover(object sender, EventArgs e)
+        {
+            tool.Show("Close", (PictureBox)sender, 3000);
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Authors:\nMarko Vrančić\nBojan Borovčanin\nMilan Kovačević\nOgnjen Lubarda\n");
+        }
+
+        private void pictureBox8_Click(object sender, EventArgs e)
+        {
+            Hide();
+            HowToPlay hp = new HowToPlay(form2.NightMode);
+            hp.ShowDialog();
+            Show();
+        }
+
+        private void LightMode()
+        {
+            BackColor = Color.FromArgb(255, 255, 255);
+            pictureBox8.Image = Properties.Resources.Asset_1;
+            roundPictureBox2.BackColor = Color.White;
+            roundPictureBox3.BackColor = Color.White;
+            foreach (Control x in Controls)
+            {
+                if (x is Label || x is Button || x is RadioButton)
+                    x.ForeColor = Color.Black;
+            }
+
+
+            cellBackground = Color.FromArgb(229, 229, 229);
+
+            panel1.BackColor = Color.DarkGray;
+            panel2.BackColor = Color.DarkGray;
+            panel3.BackColor = Color.DarkGray;
+            panel4.BackColor = Color.DarkGray;
+
+            foreach(CellView cell in tableLayoutPanel1.Controls)
+            {
+                cell.setBackground(cellBackground);
+            }
+
+            foreach (Cell move in game.currPossibleMoves)
+            {
+                move.UpdateAllMoves();
+            }
+
+        }
+
+        private void DarkMode()
+        {
+            BackColor = Color.FromArgb(32, 32, 32);
+            pictureBox8.Image = Properties.Resources.Asset_7;
+
+            roundPictureBox2.BackColor = Color.FromArgb(32, 32, 32);
+            roundPictureBox3.BackColor = Color.FromArgb(32, 32, 32);
+
+            foreach (Control x in Controls)
+            {
+                if (x is Label || x is Button || x is RadioButton)
+                    x.ForeColor = Color.White;
+            }
+
+           
+                cellBackground = Color.FromArgb(51, 51, 51);
+
+            panel1.BackColor = Color.FromArgb(78, 78, 78);
+            panel2.BackColor = Color.FromArgb(78, 78, 78);
+            panel3.BackColor = Color.FromArgb(78, 78, 78);
+            panel4.BackColor = Color.FromArgb(78, 78, 78);
+
+            labelName.ForeColor = Color.White;
+
+            foreach (CellView cell in tableLayoutPanel1.Controls)
+            {
+                cell.setBackground(cellBackground);
+            }
+
+            foreach (Cell move in game.currPossibleMoves)
+            {
+                move.UpdateAllMoves();
+            }
+        }
+
+        private void pictureBox4_Click(object sender, EventArgs e)
+        {
+            if(form2.NightMode)
+            {
+                LightMode();
+                pictureBox4.Image = Properties.Resources.Asset_12;
+                form2.NightMode = !form2.NightMode;
+            }
+            else
+            {
+                DarkMode();
+                pictureBox4.Image = Properties.Resources.Asset_10;
+                form2.NightMode = !form2.NightMode;
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,6 +39,14 @@ namespace UltimateTicTacToe.Observer
             foreach (Subscriber subscriber in subscribers)
             {
                 subscriber.UpdateAvailable();
+            }
+        }
+
+        public void SetSubBackground(Color color)
+        {
+            foreach(Subscriber subscriber in subscribers)
+            {
+                subscriber.setBackground(color);
             }
         }
     }

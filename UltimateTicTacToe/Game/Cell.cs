@@ -30,9 +30,9 @@ namespace UltimateTicTacToe.Game
             index = originalCell.index;
             childCells = new List<Cell>();
 
-            if(originalCell.childCells.Count > 0)
+            if (originalCell.childCells.Count > 0)
             {
-                for ( int i = 0; i < originalCell.childCells.Count; i++ )
+                for (int i = 0; i < originalCell.childCells.Count; i++)
                 {
                     childCells.Add(originalCell.childCells[i].Clone());
                 }
@@ -46,12 +46,23 @@ namespace UltimateTicTacToe.Game
 
         public void CreateBoard()
         {
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
                 Cell newCell = new Cell();
                 newCell.index = i;
                 childCells.Add(newCell);
             }
+        }
+
+        public void Reset()
+        {
+            if(childCells.Count > 0)
+                for(int i = 0; i < childCells.Count; i++)
+                    childCells[i].Reset();
+
+            cellValue = 0;
+            resolved = false;
+            UpdateAll();
         }
 
         public bool ResolveChildCell()

@@ -11,41 +11,53 @@ namespace UltimateTicTacToe.Game
     {
         public Cell gameBoard { get; set; }
         public int activePlayer { get; set; }
-        public List<Cell> currPossibleMoves {get;set;}
+        public int humanPlayer { get; set; }
+
+
+        public List<Cell> currPossibleMoves { get; set; }
         public MinMaxAB minmax;
 
-        public Game()
+        public Game(int player,int depth)
         {
             gameBoard = new Cell();
             gameBoard.index = 0;
             currPossibleMoves = new List<Cell>();
             gameBoard.CreateBoard();
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
                 gameBoard.childCells[i].CreateBoard();
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     currPossibleMoves.Add(gameBoard.childCells[i].childCells[j]);
                 }
             }
 
             activePlayer = 1;
-            minmax = new MinMaxAB(8);
+            humanPlayer = player;
+            minmax = new MinMaxAB(depth);
             minmax.currStatus = this;
         }
+        public bool IsPlayerTurn()
+        {
+            return activePlayer == humanPlayer;
+        }
+
+        public int playerWinCount { get; set; }
+       public int computerWinCount { get; set; }
 
         public Game(Game originalGame)
         {
             gameBoard = originalGame.gameBoard.Clone();
-
+            playerWinCount = 0;
+            computerWinCount = 0;
             currPossibleMoves = new List<Cell>();
-            if(originalGame.currPossibleMoves.Count > 0)
+            if (originalGame.currPossibleMoves.Count > 0)
             {
-                for ( int i = 0; i < 9; i++ )
+                for (int i = 0; i < 9; i++)
                 {
-                    for ( int j = 0; j < 9; j++)
+                    for (int j = 0; j < 9; j++)
                     {
-                        if(originalGame.currPossibleMoves.Contains(originalGame.gameBoard.childCells[i].childCells[j]))
+                        if (originalGame.currPossibleMoves.Contains(originalGame.gameBoard.childCells[i].childCells[j]))
                         {
                             currPossibleMoves.Add(gameBoard.childCells[i].childCells[j]);
                         }
@@ -60,6 +72,20 @@ namespace UltimateTicTacToe.Game
         {
             Game clone = new Game(this);
             return clone;
+        }
+
+        public void Reset()
+        {
+            gameBoard.Reset();
+            currPossibleMoves = new List<Cell>();
+
+            for(int i = 0; i < 9; i++)
+            {
+                for(int j = 0; j < 9; j++)
+                {
+                    currPossibleMoves.Add(gameBoard.childCells[i].childCells[j]);
+                }
+            }
         }
 
         public void endTurn()

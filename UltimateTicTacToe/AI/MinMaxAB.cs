@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace UltimateTicTacToe.AI
 {
     public class MinMaxAB
     {
         public Game.Game currStatus { get; set; }
-        private int depth;
+        public int depth { get; set; }
 
         public MinMaxAB(int depth)
         {
@@ -28,42 +29,43 @@ namespace UltimateTicTacToe.AI
             return evaulation;
         }
 
-        private Tuple<int,int> RecurMinMax(Game.Game gameStatus, Tuple<int, int> alpha, Tuple<int, int> beta, int algDepth)
+        private Tuple<int,int> AlphaBetaSearch(Game.Game gameStatus, Tuple<int, int> alpha, Tuple<int, int> beta, int algDepth)
         {
-            Tuple<int, int> ans;
-            Tuple<int, int> res;
-
             if (algDepth == 0 || gameStatus.gameBoard.resolved)
                 return Tuple.Create(EvalFunc(gameStatus), -1);
 
             if(gameStatus.activePlayer == 1)
             {
-                ans = Tuple.Create(-1000, -1);
+                Tuple<int, int> ans = Tuple.Create(-1000, -1);
                 for(int i = 0; i < gameStatus.currPossibleMoves.Count; i++)
                 {
                     Game.Game newStatus = gameStatus.GenSuccesor(gameStatus.currPossibleMoves[i]);
-                    res = Tuple.Create(RecurMinMax(newStatus, alpha, beta, algDepth - 1).Item1, i);
+                    Tuple<int, int> res = Tuple.Create(AlphaBetaSearch(newStatus, alpha, beta, algDepth - 1).Item1, i);
                     ans = res.Item1 > ans.Item1 ? res : ans;
 
                     alpha = alpha.Item1 > ans.Item1 ? alpha : ans;
-                    if(alpha.Item1 >= beta.Item1)
+                    if (alpha.Item1 >= beta.Item1)
+                    {
                         break;
+                    }
                 }
 
                 return alpha;
             }
             else
             {
-                ans = Tuple.Create(1000, -1);
+                Tuple<int, int> ans = Tuple.Create(1000, -1);
                 for (int i = 0; i < gameStatus.currPossibleMoves.Count; i++)
                 {
                     Game.Game newStatus = gameStatus.GenSuccesor(gameStatus.currPossibleMoves[i]);
-                    res = Tuple.Create(RecurMinMax(newStatus, alpha, beta, algDepth - 1).Item1, i);
+                    Tuple<int, int> res = Tuple.Create(AlphaBetaSearch(newStatus, alpha, beta, algDepth - 1).Item1, i);
                     ans = res.Item1 < ans.Item1 ? res : ans;
 
                     beta = beta.Item1 < ans.Item1 ? beta : ans;
                     if (alpha.Item1 >= beta.Item1)
+                    {
                         break;
+                    }
                 }
 
                 return beta;
@@ -76,26 +78,27 @@ namespace UltimateTicTacToe.AI
             currStatus.PlayMove(currStatus.currPossibleMoves[r.Next(0, currStatus.currPossibleMoves.Count)]);
         }
 
-        public void PlayTurn()
+        public int GetTurn()
         {
             Tuple<int, int> alpha = Tuple.Create(-1000, -1);
             Tuple<int, int> beta = Tuple.Create(1000, -1);
 
             if( currStatus.GetMoveCount() < 5)
             {
-                PlayRandomMove();
-                return;
+                Random r = new Random();
+                return r.Next(0, currStatus.currPossibleMoves.Count);
             }
 
-            int moveIndex = RecurMinMax(currStatus, alpha, beta, depth).Item2;
+            int moveIndex = AlphaBetaSearch(currStatus, alpha, beta, depth).Item2;
 
             if(moveIndex > -1)
             {
-                currStatus.PlayMove(currStatus.currPossibleMoves[moveIndex]);
+                return moveIndex;
             }
             else
             {
-                PlayRandomMove();
+                Random r = new Random();
+                return r.Next(0, currStatus.currPossibleMoves.Count);
             }
         }
     }
